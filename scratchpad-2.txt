@@ -6,3 +6,41 @@
 - Never silently swallow errors or substitute fallback values unless asked.
 - When failure behavior is not specified (fail whole request vs. skip bad
   records, retry or not), ask or state the assumption before implementing.
+
+
+OLLAMA_URL = os.getenv('OLLAMA_URL', 'http://localhost:11434')
+OLLAMA_MODEL = os.getenv('OLLAMA_MODEL', 'llama3.2:3b')
+
+
+
+curl -s http://127.0.0.1:8000/evaluations/86216d85-0ea3-4b34-b877-17023a49d952
+
+
+
+JOB_ID=$(curl -s -X POST http://127.0.0.1:8000/evaluations \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "What is 2 + 2?", "generated_answer": "5", "reference_answer": "4"}' \
+  | python3 -c 'import sys, json; print(json.load(sys.stdin)["job_id"])')
+
+curl -s http://127.0.0.1:8000/evaluations/$JOB_ID; echo
+sleep 5
+curl -s http://127.0.0.1:8000/evaluations/$JOB_ID; echo
+
+
+# empty field
+curl -i -X POST http://127.0.0.1:8000/evaluations \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "", "generated_answer": "Paris", "reference_answer": "Paris"}'
+
+# missing field
+curl -i -X POST http://127.0.0.1:8000/evaluations \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "Capital of France?", "generated_answer": "Paris"}'
+
+# wrong type
+curl -i -X POST http://127.0.0.1:8000/evaluations \
+  -H 'Content-Type: application/json' \
+  -d '{"question": "Capital of France?", "generated_answer": 123, "reference_answer": "Paris"}'
+
+
+curl -i http://127.0.0.1:8000/evaluations/does-not-exist

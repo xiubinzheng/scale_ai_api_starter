@@ -16,6 +16,8 @@ extend the existing POST/convert endpoint to:
 
 python -m pytest -v
 
+
+
 Categories
 For this exercise, the LLM must classify products into one of four categories:
 - electronics
@@ -96,3 +98,153 @@ yes, it would limit it to 4
 we can use a global semaphore using a redis counter to keep track of count of concurrent calls.  
 
 ---------------------------------------------
+
+
+Task 1 build an evaluation job API 
+
+We're building a service that allows customers to submit AI-generated responses for quality evaluation.
+
+For example, a customer might submit a question, 
+an AI-generated answer, and an expected reference answer.
+
+Our service will eventually evaluate the quality of the generated answer.
+
+
+For now, we just need to accept and store evaluation jobs.
+
+Requirements
+Implement two HTTP endpoints.
+
+1. POST /evaluations
+
+Accept a JSON request:
+{
+  "question": "What is the capital of France?",
+  "generated_answer": "Paris",
+  "reference_answer": "Paris"
+}
+
+The endpoint should:
+- Validate the request.
+- Generate a unique job_id.
+- Store the evaluation job with an initial status of pending.
+- Return HTTP 201 Created.
+
+
+{
+  "job_id": "abc-123",
+  "status": "pending"
+}
+
+2. GET /evaluations/{job_id}
+
+Retrieve a previously submitted evaluation job.
+
+Example response:
+{
+  "job_id": "abc-123",
+  "question": "What is the capital of France?",
+  "generated_answer": "Paris",
+  "reference_answer": "Paris",
+  "status": "pending"
+}
+
+
+Acceptance criteria
+- Each submission receives a unique job ID.
+- All three text fields are required and must be nonempty strings.
+- Jobs can be retrieved by their IDs.
+- Unknown job IDs return HTTP 404.
+- Invalid input returns an appropriate HTTP error.
+- Write pytest tests covering the main functionality.
+Scope: For this first task, in-memory storage is sufficient. You do not need a database, background workers, or LLM integration yet.
+
+
+--------------------------------------
+
+
+
+New requirements
+Extend your existing service so that:
+1. POST /evaluations still returns HTTP 201 with a pending job immediately, without waiting for LLM processing.
+2. The evaluation runs in the background using your local Ollama API at http://localhost:11434.
+3. The LLM evaluates the generated answer against the reference answer.
+4. The result is stored and can be retrieved through GET /evaluations/{job_id}.
+
+
+Expected evaluation result
+
+For example:
+{
+  "job_id": "abc-123",
+  "question": "What is the capital of France?",
+  "generated_answer": "Paris",
+  "reference_answer": "Paris",
+  "status": "completed",
+  "result": {
+    "score": 1,
+    "reason": "The generated answer correctly identifies Paris."
+  }
+}
+
+The result must contain:
+- score: integer 0 (incorrect) or 1 (correct).
+- reason: a nonempty string explaining the judgment.
+
+Acceptance criteria
+- POST responds without waiting for the LLM evaluation to finish.
+- An actual HTTP request is made to Ollama for each evaluation.
+- The LLM response is validated before storing the result.
+- The job transitions through the appropriate states.
+- If Ollama fails or returns invalid data, the job transitions to failed, with an error message available through GET.
+- Existing tests continue passing.
+- New pytest tests cover successful evaluation, failures, and background execution.
+You may mock Ollama in unit tests.
+
+
+
+-------------------------------------------
+
+New requirements
+Modify your existing service to:
+1. Process multiple evaluation jobs concurrently, making actual overlapping HTTP requests to Ollama.
+2. Enforce a global limit of 3 concurrent Ollama requests across all evaluation jobs within one application process.
+3. Allow additional jobs to wait for execution when all 3 slots are occupied.
+4. Keep POST /evaluations responsive, returning 201 with pending even when the system is busy.
+5. Maintain accurate job states and ensure one failed job doesn't prevent other jobs from completing.
+
+
+Acceptance criteria
+- At least two Ollama API requests can be in flight simultaneously.
+- No more than three Ollama API requests are in flight at any moment within the process.
+- Additional jobs remain pending until a worker is available.
+- The POST endpoint doesn't wait for a worker to become available.
+- Existing tests continue passing.
+- New pytest tests verify real overlapping execution, the concurrency limit, and failure isolation.
+
+
+Scope: A single FastAPI application process is sufficient. You don't need Redis, Celery, or a distributed queue.
+
+
+How would you ensure those 17 jobs remain in pending status until a worker actually starts processing them?
+we set the worker to only claim job that have "pending" status.  
+
+
+How would you ensure a new POST /evaluations request returns immediately rather than blocking while waiting for a semaphore permit?
+we can return an UUID immediately so that we can use it to track of the job, rather than blocking. 
+
+
+1. What does the HTTP handler do before returning 201?
+It should create an job_entry with an UUID before returning 201 code.
+
+
+2. Who puts the job in the queue?
+the api service as the producer will put the job into the queue.
+
+
+3. When does the job transition from pending to running?
+when a LLM worker actual pick up that job and making the call to the llm.
+
+
+4. Where does the semaphore get acquired and released?
+acquired when a llm worker starts on a job and released when it finshes the job. 
