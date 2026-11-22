@@ -1,0 +1,8 @@
+## Error Handling
+- Use conventional status codes: 400 bad input, 404 missing file,
+  422 validation, 502 upstream/LLM error, 503 upstream unreachable, 500 unexpected.
+- Return clear, specific error messages; never expose stack traces or secrets.
+- Catch specific exceptions; no bare `except:`.
+- Never silently swallow errors or substitute fallback values unless asked.
+- When failure behavior is not specified (fail whole request vs. skip bad
+  records, retry or not), ask or state the assumption before implementing.
