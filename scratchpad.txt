@@ -14,6 +14,8 @@ extend the existing POST/convert endpoint to:
 - Add a category field to each JSON object.
 - Write the enriched records to the output JSON file.
 
+python -m pytest -v
+
 Categories
 For this exercise, the LLM must classify products into one of four categories:
 - electronics
