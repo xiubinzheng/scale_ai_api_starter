@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest)",
+      "Bash(pytest *)",
+      "Bash(python -m pytest)",
+      "Bash(python -m pytest *)",
+      "Bash(.venv/bin/python -m pytest)",
+      "Bash(.venv/bin/python -m pytest *)",
+      "Bash(.venv/bin/pytest)",
+      "Bash(.venv/bin/pytest *)",
+
+      "Bash(curl http://localhost:*)",
+      "Bash(curl * http://localhost:*)",
+      "Bash(curl http://127.0.0.1:*)",
+      "Bash(curl * http://127.0.0.1:*)",
+
+      "Bash(ls)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(wc *)",
+      "Bash(grep *)",
+
+      "Bash(git status)",
+      "Bash(git status *)",
+      "Bash(git diff)",
+      "Bash(git diff *)",
+      "Bash(git log)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(git branch)",
+
+      "Bash(pip list)",
+      "Bash(pip freeze)",
+      "Bash(ollama list)"
+    ]
+  }
+}

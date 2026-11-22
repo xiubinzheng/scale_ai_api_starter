@@ -37,6 +37,6 @@
 - Focus only on the current interviewer requirement.
 - Do not anticipate or implement unrequested features.
 - Prefer minimal code changes over major rewrites.
-- Explain implementation decisions concisely.
+- Explain implementation decisions concisely in a few bullet points.
 - When reporting completion, summarize what changed
   and whether tests passed.
