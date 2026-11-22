@@ -1,0 +1,96 @@
+curl -i -X POST http://127.0.0.1:8000/convert \
+  -H 'Content-Type: application/json' \
+  -d '{"csv_path": "/data/products.csv"}'
+
+curl -i -X POST http://127.0.0.1:8000/convert \
+  -H 'Content-Type: application/json' \
+  -d "{\"csv_path\": \"$(pwd)/data/products.csv\"}"
+
+
+extend the existing POST/convert endpoint to:
+- Read and convert the CSV as before.
+- Call an LLM API for each record to determine its category.
+- Use the local Ollama server at http://localhost:11434.
+- Add a category field to each JSON object.
+- Write the enriched records to the output JSON file.
+
+Categories
+For this exercise, the LLM must classify products into one of four categories:
+- electronics
+- clothing
+- furniture
+- other
+
+Expected output should be below:
+[
+  {
+    "id": "1",
+    "name": "MacBook Pro",
+    "description": "Apple laptop",
+    "category": "electronics"
+  },
+  {
+    "id": "2",
+    "name": "Nike Air Max",
+    "description": "Running shoes",
+    "category": "clothing"
+  },
+  {
+    "id": "3",
+    "name": "Office Chair",
+    "description": "Ergonomic furniture",
+    "category": "furniture"
+  }
+]
+
+Accepted Criteria are:
+- each record is categorized through an actual llm api call
+- the category must be one of the four allowed values
+- existing csv fields remain unchanged
+- the output remains valid json.
+- llm faliures are handled appropriately
+- add pytest coverage for the new functaionality, test may mock the LLM api. 
+
+
+---------------------------------------------
+
+Modify the exisitng implementaion to categorize records concurrently, making 
+overlapping http requests to Ollama.
+
+1. allow at most 4 concurrent llm calls.
+2. all records must be categorized.
+3. the output json must preserve the original csv row order.
+4. preserve the existing error handling behavior.
+5.Keep the same POST /convert endpoint and response format.
+6.Add tests demonstrating that multiple LLM API calls actually overlap in time, rather than merely being scheduled sequentially.
+
+Acceptance criteria
+- At least two LLM HTTP requests can be in flight simultaneously.
+- No more than four LLM requests are in flight at once.
+- Results are mapped to the correct records, even when requests finish out of order.
+- Existing tests continue passing.
+- New concurrency tests pass.
+
+Before you start coding:
+
+How would you modify your current design to support parallel LLM requests while 
+preserving the order of the final json output?
+
+Explain your approach briefly, then implement it.
+
+
+
+
+
+What is the maximum number of simultaneous LLM requests that could reach Ollama?
+4
+
+
+Would your current concurrency limit protect Ollama?
+yes, it would limit it to 4
+
+
+1. How would you modify your architecture to enforce a global concurrency limit across all incoming HTTP requests?
+we can use a global semaphore using a redis counter to keep track of count of concurrent calls.  
+
+---------------------------------------------

@@ -10,7 +10,7 @@ Python 3.10+ recommended. Use these commands from this folder:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-python -m pytest -q
+python -m pytest -v
 uvicorn main:app --reload --port 8000
 ```
 
